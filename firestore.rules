@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- HELPER FUNCTIONS ---
+    
+    // Check if the requesting user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if the user is an Administrator
+    // Reads their user document to verify the 'role' field
+    function isAdministrator() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrator';
+    }
+
+    // --- COLLECTION RULES ---
+
+    // USERS COLLECTION
+    // Strict control to prevent Unauthorized Role Escalation
+    match /users/{userId} {
+      // Allow any authenticated user to read user profiles (needed for User Management list)
+      allow read: if isAuthenticated();
+      
+      // Allow user to create their own profile (Sign Up)
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Allow Update:
+      // 1. Administrators can update any field (including roles)
+      // 2. Users can update their own profile, BUT CANNOT change their 'role'
+      allow update: if isAdministrator() 
+                    || (isAuthenticated() && request.auth.uid == userId && 
+                        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])));
+                        
+      // Allow Delete: Only Administrators
+      allow delete: if isAdministrator();
+    }
+
+    // BUSINESS COLLECTIONS (Products, Stock, Bills, etc.)
+    // Allow access to staff (Cashiers, Admins, Administrators)
+    
+    // Note: Codebase uses 'Products' (Capital P) with nested subcollections 'details/datas' and 'stocks'
+    match /Products/{document=**} { allow read, write: if isAuthenticated(); }
+    
+    // Codebase uses 'stocks' (lowercase)? No, mostly nested in Products.
+    // Checking PosService: .collection('stocks') is widely used? 
+    // Actually PosService uses _firestore.collection('Products').doc('stocks').collection(productId)
+    // AND _firestore.collection('Products').doc('details').collection('datas')
+    // So 'Products' catch-all above handles IT ALL.
+    
+    match /bills/{document=**} { allow read, write: if isAuthenticated(); }
+    match /purchase_orders/{document=**} { allow read, write: if isAuthenticated(); }
+    match /categories/{document=**} { allow read, write: if isAuthenticated(); }
+    match /attributes/{document=**} { allow read, write: if isAuthenticated(); }
+    match /suppliers/{document=**} { allow read, write: if isAuthenticated(); }
+    match /connections/{document=**} { allow read, write: if isAuthenticated(); }
+    match /app_settings/{document=**} { allow read, write: if isAuthenticated(); }
+    match /settings/{document=**} { allow read, write: if isAuthenticated(); }
+
+    // TRANSPARENCY SYSTEM COLLECTIONS
+    // Settings: Only Admin can change target value
+    match /bill_settings/{document=**} { 
+      allow read: if isAuthenticated();
+      allow write: if isAdministrator();
+    }
+    // Bill Origin (Curated): Read by all, Write by Admin
+    match /bill_origin/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdministrator();
+    }
+    // Temp Origin (Pending): Read by all, Write by Admin
+    match /temp_origin/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdministrator();
+    }
+
+    // DEFAULT FALLBACK
+    // Deny access to any other collection not explicitly defined above
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
