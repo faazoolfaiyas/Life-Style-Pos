@@ -136,6 +136,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
 
     // ─── Escape: Clear search & refocus ───
     if (key == LogicalKeyboardKey.escape) {
+      ref.read(cartSelectionProvider.notifier).clearSelection();
       ref.read(searchFocusRequestProvider.notifier).requestFocus();
       return KeyEventResult.handled;
     }
