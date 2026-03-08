@@ -33,45 +33,24 @@ class PosCartSection extends ConsumerStatefulWidget {
 }
 
 class _PosCartSectionState extends ConsumerState<PosCartSection> {
-  int _selectedIndex = -1;
-  late FocusNode _focusNode;
-  final ScrollController _scrollController = ScrollController(); // Added controller
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode = FocusNode();
-  }
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void dispose() {
-    _focusNode.dispose();
-    _scrollController.dispose(); // Dispose controller
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _handleArrowKey(int delta, int itemCount) {
-    if (itemCount == 0) return;
-    setState(() {
-      _selectedIndex = (_selectedIndex + delta).clamp(0, itemCount - 1);
-    });
-    _scrollToSelected();
-  }
-
-
-  void _scrollToSelected() {
-    if (_selectedIndex < 0 || !_scrollController.hasClients) return;
+  void _scrollToSelected(int selectedIndex) {
+    if (selectedIndex < 0 || !_scrollController.hasClients) return;
     
-    // Estimate item height ~60px
     const double itemHeight = 60.0; 
-    final double targetOffset = _selectedIndex * itemHeight;
+    final double targetOffset = selectedIndex * itemHeight;
     
-    // Check if out of view
     if (targetOffset < _scrollController.offset || 
         targetOffset > _scrollController.offset + _scrollController.position.viewportDimension - itemHeight) {
-          
        _scrollController.animateTo(
-         targetOffset - 100, // Scroll with some padding
+         targetOffset - 100,
          duration: const Duration(milliseconds: 200),
          curve: Curves.easeOut,
        );
@@ -84,94 +63,51 @@ class _PosCartSectionState extends ConsumerState<PosCartSection> {
     final theme = Theme.of(context);
     final activeBill = globalCartState.activeBill;
     final items = activeBill.items;
+    final selectedIndex = ref.watch(cartSelectionProvider);
 
-    // Reset selection if out of bounds
-    if (_selectedIndex >= items.length) {
-      _selectedIndex = items.isNotEmpty ? items.length - 1 : -1;
-    }
+    // Clamp selection if items changed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(cartSelectionProvider.notifier).clamp(items.length);
+    });
 
-    return CallbackShortcuts(
-      bindings: {
-        // POS OPERATIONS - Delegated to PosScreen
-        
-        // PAYMENT METHODS
-        SingleActivator(LogicalKeyboardKey.f9): () => ref.read(cartProvider.notifier).setPaymentMethod('Cash'),
-        SingleActivator(LogicalKeyboardKey.f10): () => ref.read(cartProvider.notifier).setPaymentMethod('Card'),
-        SingleActivator(LogicalKeyboardKey.f11): () => ref.read(cartProvider.notifier).setPaymentMethod('Transfer'),
-        SingleActivator(LogicalKeyboardKey.f12): () => ref.read(cartProvider.notifier).setPaymentMethod('Credit'),
+    // Listen for cart selection changes to auto-scroll
+    ref.listen<int>(cartSelectionProvider, (prev, next) {
+      _scrollToSelected(next);
+    });
 
-        // CART NAVIGATION
-        SingleActivator(LogicalKeyboardKey.arrowUp): () => _handleArrowKey(-1, items.length),
-        SingleActivator(LogicalKeyboardKey.arrowDown): () => _handleArrowKey(1, items.length),
-        
-        // CART ACTIONS
-        SingleActivator(LogicalKeyboardKey.add): () {
-             if (_selectedIndex >= 0 && _selectedIndex < items.length) {
-               ref.read(cartProvider.notifier).updateQuantity(_selectedIndex, items[_selectedIndex].quantity + 1);
-             }
-        },
-         SingleActivator(LogicalKeyboardKey.equal): () { // Support +/= key
-             if (_selectedIndex >= 0 && _selectedIndex < items.length) {
-               ref.read(cartProvider.notifier).updateQuantity(_selectedIndex, items[_selectedIndex].quantity + 1);
-             }
-        },
-        SingleActivator(LogicalKeyboardKey.minus): () {
-             if (_selectedIndex >= 0 && _selectedIndex < items.length) {
-               ref.read(cartProvider.notifier).updateQuantity(_selectedIndex, items[_selectedIndex].quantity - 1);
-             }
-        },
-        SingleActivator(LogicalKeyboardKey.numpadAdd): () {
-             if (_selectedIndex >= 0 && _selectedIndex < items.length) {
-               ref.read(cartProvider.notifier).updateQuantity(_selectedIndex, items[_selectedIndex].quantity + 1);
-             }
-        },
-        SingleActivator(LogicalKeyboardKey.numpadSubtract): () {
-             if (_selectedIndex >= 0 && _selectedIndex < items.length) {
-               ref.read(cartProvider.notifier).updateQuantity(_selectedIndex, items[_selectedIndex].quantity - 1);
-             }
-        },
-        SingleActivator(LogicalKeyboardKey.delete): () {
-             if (_selectedIndex >= 0 && _selectedIndex < items.length) {
-               ref.read(cartProvider.notifier).removeFromCart(_selectedIndex);
-               setState(() {
-                 if (_selectedIndex >= items.length - 1) _selectedIndex = items.length - 2;
-               });
-             }
-        },
-         SingleActivator(LogicalKeyboardKey.enter): () {
-             if (_selectedIndex >= 0 && _selectedIndex < items.length) {
-               _showEditPriceDialog(context, ref, _selectedIndex, items[_selectedIndex]);
-             }
-        },
-      },
-      child: Focus(
-        focusNode: _focusNode,
-        autofocus: true,
-        child: Container(
-          color: theme.cardColor,
-          child: Column(
-            children: [
-              // 1. Bill Tabs
-              _buildBillTabs(context, ref, globalCartState),
-              
-              // 2. Customer Info & Bill Header
-              _buildHeader(context, ref, activeBill),
-              
-              // 3. Cart Items List (Table Logic)
-              Expanded(
-                child: activeBill.items.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(FontAwesomeIcons.cartShopping, size: 48, color: Colors.grey[300]),
-                            const SizedBox(height: 16),
-                            Text('Cart is Empty', style: TextStyle(color: Colors.grey[400])),
+    // Listen for edit price requests from keyboard shortcut
+    ref.listen<int>(editPriceRequestProvider, (prev, next) {
+      final sel = ref.read(cartSelectionProvider);
+      if (sel >= 0 && sel < items.length) {
+        _showEditPriceDialog(context, ref, sel, items[sel]);
+      }
+    });
+
+    return Container(
+      color: theme.cardColor,
+      child: Column(
+        children: [
+          // 1. Bill Tabs
+          _buildBillTabs(context, ref, globalCartState),
+          
+          // 2. Customer Info & Bill Header
+          _buildHeader(context, ref, activeBill),
+          
+          // 3. Cart Items List (Table Logic)
+          Expanded(
+            child: activeBill.items.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(FontAwesomeIcons.cartShopping, size: 48, color: Colors.grey[300]),
+                        const SizedBox(height: 16),
+                        Text('Cart is Empty', style: TextStyle(color: Colors.grey[400])),
                           ],
                         ),
                       )
                     : GestureDetector(
-                        onTap: () => _focusNode.requestFocus(),
+                        onTap: () {},
                         child: Column(
                           children: [
                             // Table Header
@@ -238,8 +174,6 @@ class _PosCartSectionState extends ConsumerState<PosCartSection> {
               _buildFooter(context, ref, activeBill),
             ],
           ),
-        ),
-      ),
     );
   }
 
@@ -643,7 +577,7 @@ class _PosCartSectionState extends ConsumerState<PosCartSection> {
 
     final isDiscounted = item.discount > 0.01;
 
-    final isSelected = index == _selectedIndex;
+    final isSelected = index == ref.watch(cartSelectionProvider);
 
     return Container(
       decoration: BoxDecoration(
@@ -966,81 +900,101 @@ class _PosCartSectionState extends ConsumerState<PosCartSection> {
     // Controllers
     final priceController = TextEditingController(text: currentEffectiveUnitPrice.toStringAsFixed(0));
     final discountController = TextEditingController(text: currentUnitDiscount.toStringAsFixed(0));
+    final priceFocus = FocusNode();
+    final discountFocus = FocusNode();
     
     // State to avoid circular updates
     bool isUpdating = false;
+
+    void submit() {
+      final newPrice = double.tryParse(priceController.text);
+      if (newPrice != null && newPrice >= 0) {
+        ref.read(cartProvider.notifier).updateItemPrice(index, newPrice);
+        Navigator.pop(context);
+      }
+    }
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
-          return AlertDialog(
-            title: Text('Edit Price & Discount', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Original Unit Price: LKR ${item.price.toStringAsFixed(0)}', style: const TextStyle(color: Colors.grey)),
-                const SizedBox(height: 16),
-                
-                // 1. EDIT PRICE
-                TextField(
-                  controller: priceController,
-                  keyboardType: TextInputType.number,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: 'New Unit Price (LKR)',
-                    border: OutlineInputBorder(),
-                    prefixText: 'LKR ',
+          return CallbackShortcuts(
+            bindings: {
+              SingleActivator(LogicalKeyboardKey.arrowDown): () {
+                if (priceFocus.hasFocus) discountFocus.requestFocus();
+              },
+              SingleActivator(LogicalKeyboardKey.arrowUp): () {
+                if (discountFocus.hasFocus) priceFocus.requestFocus();
+              },
+            },
+            child: AlertDialog(
+              title: Text('Edit Price & Discount', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Original Unit Price: LKR ${item.price.toStringAsFixed(0)}', style: const TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 16),
+                  
+                  // 1. EDIT PRICE
+                  TextField(
+                    controller: priceController,
+                    focusNode: priceFocus,
+                    keyboardType: TextInputType.number,
+                    autofocus: true,
+                    textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => discountFocus.requestFocus(),
+                    decoration: const InputDecoration(
+                      labelText: 'New Unit Price (LKR)',
+                      border: OutlineInputBorder(),
+                      prefixText: 'LKR ',
+                    ),
+                    onChanged: (val) {
+                      if (isUpdating) return;
+                      final newPrice = double.tryParse(val);
+                      if (newPrice != null) {
+                        isUpdating = true;
+                        final newDiscount = item.price - newPrice;
+                        discountController.text = newDiscount.toStringAsFixed(0);
+                        isUpdating = false;
+                      }
+                    },
                   ),
-                  onChanged: (val) {
-                    if (isUpdating) return;
-                    final newPrice = double.tryParse(val);
-                    if (newPrice != null) {
-                      isUpdating = true;
-                      final newDiscount = item.price - newPrice;
-                      discountController.text = newDiscount.toStringAsFixed(0);
-                      isUpdating = false;
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                
-                // 2. EDIT DISCOUNT
-                TextField(
-                  controller: discountController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Unit Discount (LKR)',
-                    border: OutlineInputBorder(),
-                    prefixText: '- LKR ',
+                  const SizedBox(height: 12),
+                  
+                  // 2. EDIT DISCOUNT
+                  TextField(
+                    controller: discountController,
+                    focusNode: discountFocus,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => submit(),
+                    decoration: const InputDecoration(
+                      labelText: 'Unit Discount (LKR)',
+                      border: OutlineInputBorder(),
+                      prefixText: '- LKR ',
+                    ),
+                    onChanged: (val) {
+                      if (isUpdating) return;
+                      final newDiscount = double.tryParse(val);
+                      if (newDiscount != null) {
+                        isUpdating = true;
+                        final newPrice = item.price - newDiscount;
+                        priceController.text = newPrice.toStringAsFixed(0);
+                        isUpdating = false;
+                      }
+                    },
                   ),
-                  onChanged: (val) {
-                    if (isUpdating) return;
-                    final newDiscount = double.tryParse(val);
-                    if (newDiscount != null) {
-                      isUpdating = true;
-                      final newPrice = item.price - newDiscount;
-                      priceController.text = newPrice.toStringAsFixed(0);
-                      isUpdating = false;
-                    }
-                  },
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                FilledButton(
+                  onPressed: submit,
+                  child: const Text('Update'),
                 ),
               ],
             ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-              FilledButton(
-                onPressed: () {
-                  final newPrice = double.tryParse(priceController.text);
-                  if (newPrice != null && newPrice >= 0) {
-                    ref.read(cartProvider.notifier).updateItemPrice(index, newPrice);
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('Update'),
-              ),
-            ],
           );
         }
       ),

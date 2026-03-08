@@ -571,3 +571,59 @@ final recentBillsProvider = StreamProvider<List<Bill>>((ref) {
 final pendingBillsProvider = StreamProvider<List<Bill>>((ref) {
   return ref.watch(posServiceProvider).getPendingBills();
 });
+
+// Focus request trigger for search bar (increment to signal focus)
+class SearchFocusNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+  
+  void requestFocus() => state++;
+}
+
+final searchFocusRequestProvider = NotifierProvider<SearchFocusNotifier, int>(SearchFocusNotifier.new);
+
+// Selected cart item index (shared so keyboard handler can navigate)
+class CartSelectionNotifier extends Notifier<int> {
+  @override
+  int build() => -1;
+  
+  void select(int index) => state = index;
+  
+  void moveUp(int itemCount) {
+    if (itemCount == 0) return;
+    if (state <= 0) {
+      state = itemCount - 1;
+    } else {
+      state = state - 1;
+    }
+  }
+  
+  void moveDown(int itemCount) {
+    if (itemCount == 0) return;
+    if (state >= itemCount - 1) {
+      state = 0;
+    } else {
+      state = state + 1;
+    }
+  }
+  
+  void clamp(int itemCount) {
+    if (itemCount == 0) { state = -1; return; }
+    if (state >= itemCount) state = itemCount - 1;
+    // Do not force selection if it is explicitly cleared (-1)
+    if (state < -1) state = -1;
+  }
+  
+  void clearSelection() => state = -1;
+}
+
+final cartSelectionProvider = NotifierProvider<CartSelectionNotifier, int>(CartSelectionNotifier.new);
+
+// Edit price request trigger (increment to signal)
+class EditPriceRequestNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+  void request() => state++;
+}
+
+final editPriceRequestProvider = NotifierProvider<EditPriceRequestNotifier, int>(EditPriceRequestNotifier.new);

@@ -32,6 +32,17 @@ class _PosProductGridState extends ConsumerState<PosProductGrid> {
   String? _selectedCategory;
 
   @override
+  void initState() {
+    super.initState();
+    _searchFocusNode.addListener(() {
+      if (_searchFocusNode.hasFocus) {
+         // Clear cart selection when user is searching/scanning
+         ref.read(cartSelectionProvider.notifier).clearSelection();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -41,6 +52,16 @@ class _PosProductGridState extends ConsumerState<PosProductGrid> {
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(productsStreamProvider); 
+
+    // Listen for focus requests from keyboard shortcuts (F1, Escape)
+    ref.listen<int>(searchFocusRequestProvider, (prev, next) {
+      _searchFocusNode.requestFocus();
+      _searchController.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _searchController.text.length,
+      );
+    });
+
     
     // Fetch attributes using stable providers
     final sizesAsync = ref.watch(sizesProvider);
@@ -77,7 +98,8 @@ class _PosProductGridState extends ConsumerState<PosProductGrid> {
                       setState(() => _searchQuery = val.toLowerCase());
                     },
                     // SCANNING LOGIC MOVED TO onSubmitted (ENTER KEY)
-                    onSubmitted: (val) async {
+                    onSubmitted: (rawVal) async {
+                      final val = rawVal.trim();
                       if (val.isEmpty) return;
 
                       // 1. SMART SCAN: Prefix Matching for Stock IDs
@@ -88,7 +110,7 @@ class _PosProductGridState extends ConsumerState<PosProductGrid> {
                       
                        // Find candidate products where scanned code starts with their product code
                        final candidates = products.where((p) => 
-                         p.productCode.isNotEmpty && val.startsWith(p.productCode)
+                         p.productCode.isNotEmpty && val.toLowerCase().startsWith(p.productCode.toLowerCase())
                        ).toList();
                        
                        // Sort by longest code first (Greedy match)

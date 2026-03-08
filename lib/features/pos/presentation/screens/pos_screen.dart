@@ -12,32 +12,209 @@ import '../widgets/pos_product_grid.dart';
 import '../widgets/bill_history_dialog.dart';
 import '../widgets/pos_product_filter_panel.dart';
 
-class PosScreen extends ConsumerWidget {
+class PosScreen extends ConsumerStatefulWidget {
   const PosScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return CallbackShortcuts(
-      bindings: {
-        // POS OPERATIONS
-        const SingleActivator(LogicalKeyboardKey.f5): () => _showDiscountDialog(context, ref),
-        const SingleActivator(LogicalKeyboardKey.f6): () => _handleHold(context, ref),
-        const SingleActivator(LogicalKeyboardKey.f7): () => _handleSaveWithoutPrint(context, ref),
-        const SingleActivator(LogicalKeyboardKey.f8): () => _handleCheckoutWithDialog(context, ref),
-        
-        // PAYMENT METHODS
-        SingleActivator(LogicalKeyboardKey.f9): () => ref.read(cartProvider.notifier).setPaymentMethod('Cash'),
-        SingleActivator(LogicalKeyboardKey.f10): () => ref.read(cartProvider.notifier).setPaymentMethod('Card'),
-        SingleActivator(LogicalKeyboardKey.f11): () => ref.read(cartProvider.notifier).setPaymentMethod('Transfer'),
-        SingleActivator(LogicalKeyboardKey.f12): () => ref.read(cartProvider.notifier).setPaymentMethod('Credit'),
-      },
+  ConsumerState<PosScreen> createState() => _PosScreenState();
+}
+
+class _PosScreenState extends ConsumerState<PosScreen> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // ---------------------------------------------------------------------------
+  // Top-level keyboard handler — fires BEFORE any child (TextField, etc.)
+  // ---------------------------------------------------------------------------
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+
+    final key = event.logicalKey;
+    final ctrl = HardwareKeyboard.instance.isControlPressed;
+
+    // ─── F1: Focus search bar ───
+    if (key == LogicalKeyboardKey.f1) {
+      ref.read(searchFocusRequestProvider.notifier).requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // ─── F2: Quick Sale ───
+    if (key == LogicalKeyboardKey.f2) {
+      _showQuickSaleDialog(context, ref);
+      return KeyEventResult.handled;
+    }
+
+    // ─── F3: Bill History ───
+    if (key == LogicalKeyboardKey.f3) {
+      _showHistoryDialog(context, ref);
+      return KeyEventResult.handled;
+    }
+
+    // ─── F4: Pending Bills ───
+    if (key == LogicalKeyboardKey.f4) {
+      _showPendingBillsDialog(context, ref);
+      return KeyEventResult.handled;
+    }
+
+    // ─── F5: Discount ───
+    if (key == LogicalKeyboardKey.f5) {
+      _showDiscountDialog(context, ref);
+      return KeyEventResult.handled;
+    }
+
+    // ─── F6: Hold ───
+    if (key == LogicalKeyboardKey.f6) {
+      _handleHold(context, ref);
+      return KeyEventResult.handled;
+    }
+
+    // ─── F7: Save ───
+    if (key == LogicalKeyboardKey.f7) {
+      _handleSaveWithoutPrint(context, ref);
+      return KeyEventResult.handled;
+    }
+
+    // ─── F8: Print & Complete ───
+    if (key == LogicalKeyboardKey.f8) {
+      _handleCheckoutWithDialog(context, ref);
+      return KeyEventResult.handled;
+    }
+
+    // ─── F9–F12: Payment Methods ───
+    if (key == LogicalKeyboardKey.f9) {
+      ref.read(cartProvider.notifier).setPaymentMethod('Cash');
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.f10) {
+      ref.read(cartProvider.notifier).setPaymentMethod('Card');
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.f11) {
+      ref.read(cartProvider.notifier).setPaymentMethod('Transfer');
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.f12) {
+      ref.read(cartProvider.notifier).setPaymentMethod('Credit');
+      return KeyEventResult.handled;
+    }
+
+    // ─── Ctrl+N: New Bill ───
+    if (ctrl && key == LogicalKeyboardKey.keyN) {
+      ref.read(cartProvider.notifier).createNewBill();
+      return KeyEventResult.handled;
+    }
+
+    // ─── Ctrl+W: Close Bill Tab ───
+    if (ctrl && key == LogicalKeyboardKey.keyW) {
+      final state = ref.read(cartProvider);
+      if (state.bills.length > 1) {
+        ref.read(cartProvider.notifier).closeBill(state.activeIndex);
+      }
+      return KeyEventResult.handled;
+    }
+
+    // ─── Ctrl+]: Next Bill Tab ───
+    if (ctrl && key == LogicalKeyboardKey.bracketRight) {
+      final state = ref.read(cartProvider);
+      final nextIndex = (state.activeIndex + 1) % state.bills.length;
+      ref.read(cartProvider.notifier).switchBill(nextIndex);
+      return KeyEventResult.handled;
+    }
+
+    // ─── Ctrl+[: Previous Bill Tab ───
+    if (ctrl && key == LogicalKeyboardKey.bracketLeft) {
+      final state = ref.read(cartProvider);
+      final prevIndex = (state.activeIndex - 1 + state.bills.length) % state.bills.length;
+      ref.read(cartProvider.notifier).switchBill(prevIndex);
+      return KeyEventResult.handled;
+    }
+
+    // ─── Ctrl+P: Toggle Filter Panel ───
+    if (ctrl && key == LogicalKeyboardKey.keyP) {
+      _scaffoldKey.currentState?.openEndDrawer();
+      return KeyEventResult.handled;
+    }
+
+    // ─── Escape: Clear search & refocus ───
+    if (key == LogicalKeyboardKey.escape) {
+      ref.read(searchFocusRequestProvider.notifier).requestFocus();
+      return KeyEventResult.handled;
+    }
+
+    // ─── CART NAVIGATION & EDITING ───
+    // Only handle these when NOT typing in a text field.
+    final focusedWidget = FocusManager.instance.primaryFocus;
+    final widget = focusedWidget?.context?.widget;
+    final isInTextField = widget is EditableText || 
+                          widget.runtimeType.toString().contains('TextField') ||
+                          widget.runtimeType.toString().contains('TextFormField');
+
+    if (!isInTextField && !ctrl) {
+      final items = ref.read(cartProvider).activeBill.items;
+      final sel = ref.read(cartSelectionProvider);
+
+      // ↑ Navigate cart up
+      if (key == LogicalKeyboardKey.arrowUp) {
+        ref.read(cartSelectionProvider.notifier).moveUp(items.length);
+        return KeyEventResult.handled;
+      }
+
+      // ↓ Navigate cart down
+      if (key == LogicalKeyboardKey.arrowDown) {
+        ref.read(cartSelectionProvider.notifier).moveDown(items.length);
+        return KeyEventResult.handled;
+      }
+
+      // + / = / Numpad+: Increase quantity
+      if (key == LogicalKeyboardKey.add || key == LogicalKeyboardKey.equal || key == LogicalKeyboardKey.numpadAdd) {
+        if (sel >= 0 && sel < items.length) {
+          ref.read(cartProvider.notifier).updateQuantity(sel, items[sel].quantity + 1);
+        }
+        return KeyEventResult.handled;
+      }
+
+      // - / Numpad-: Decrease quantity
+      if (key == LogicalKeyboardKey.minus || key == LogicalKeyboardKey.numpadSubtract) {
+        if (sel >= 0 && sel < items.length) {
+          ref.read(cartProvider.notifier).updateQuantity(sel, items[sel].quantity - 1);
+        }
+        return KeyEventResult.handled;
+      }
+
+      // Delete: Remove item
+      if (key == LogicalKeyboardKey.delete) {
+        if (sel >= 0 && sel < items.length) {
+          ref.read(cartProvider.notifier).removeFromCart(sel);
+          ref.read(cartSelectionProvider.notifier).clamp(items.length - 1);
+        }
+        return KeyEventResult.handled;
+      }
+
+      // Enter: Edit price of selected item
+      if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+        if (sel != null && sel >= 0 && sel < items.length) {
+          ref.read(editPriceRequestProvider.notifier).request();
+          return KeyEventResult.handled;
+        }
+        // If nothing is selected, let the Enter key pass through!
+      }
+    }
+
+    // Let everything else pass through to children (typing, etc.)
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      autofocus: true,
+      onKeyEvent: _handleKeyEvent,
       child: Scaffold(
+        key: _scaffoldKey,
         endDrawer: PosProductFilterPanel(
           sortBy: 'name',
           sortAsc: true,
           onApply: ({category, size, color, minPrice, maxPrice, stockStatus, sortBy = 'name', sortAsc = true}) {
             // TODO: Apply filters to product grid
-            // For now, just close the drawer
           },
           onReset: () {
             // TODO: Reset filters in product grid  
@@ -193,49 +370,69 @@ class PosScreen extends ConsumerWidget {
   void _showQuickSaleDialog(BuildContext context, WidgetRef ref) {
     final nameCtrl = TextEditingController();
     final priceCtrl = TextEditingController();
+    final nameFocus = FocusNode();
+    final priceFocus = FocusNode();
+
+    void submit() {
+      final name = nameCtrl.text.trim();
+      final price = double.tryParse(priceCtrl.text) ?? 0.0;
+      
+      if (name.isNotEmpty && price >= 0) {
+        ref.read(cartProvider.notifier).addQuickSaleItem(name, price);
+        Navigator.pop(context);
+      }
+    }
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Quick Sale', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              autofocus: true,
-              decoration: InputDecoration(
-                labelText: 'Item Name',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      builder: (context) => CallbackShortcuts(
+        bindings: {
+          SingleActivator(LogicalKeyboardKey.arrowDown): () {
+            if (nameFocus.hasFocus) priceFocus.requestFocus();
+          },
+          SingleActivator(LogicalKeyboardKey.arrowUp): () {
+            if (priceFocus.hasFocus) nameFocus.requestFocus();
+          },
+        },
+        child: AlertDialog(
+          title: Text('Quick Sale', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                focusNode: nameFocus,
+                autofocus: true,
+                textInputAction: TextInputAction.next,
+                onSubmitted: (_) => priceFocus.requestFocus(),
+                decoration: InputDecoration(
+                  labelText: 'Item Name',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: priceCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: 'Selling Price',
-                prefixText: 'LKR ',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: priceCtrl,
+                focusNode: priceFocus,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => submit(),
+                decoration: InputDecoration(
+                  labelText: 'Selling Price',
+                  prefixText: 'LKR ',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: submit,
+              child: const Text('Add to Cart'),
             ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              final price = double.tryParse(priceCtrl.text) ?? 0.0;
-              
-              if (name.isNotEmpty && price >= 0) {
-                ref.read(cartProvider.notifier).addQuickSaleItem(name, price);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Add to Cart'),
-          ),
-        ],
       ),
     );
   }
@@ -358,7 +555,9 @@ class PosScreen extends ConsumerWidget {
                         Expanded(
                           child: TextFormField(
                             controller: splitCashCtrl,
+                            autofocus: true,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            textInputAction: TextInputAction.done,
                             decoration: const InputDecoration(
                               labelText: 'Cash Paid',
                               prefixText: 'LKR ',
@@ -366,6 +565,11 @@ class PosScreen extends ConsumerWidget {
                               isDense: true,
                             ),
                             onChanged: (val) => setState(() {}),
+                            onFieldSubmitted: (_) {
+                              if (canComplete) {
+                                _handlePaymentCompletion(context, ref, isCard ? cardBalanceToCharge : receivedAmount, splitCashAmount, shouldPrint, isCard);
+                              }
+                            },
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -640,49 +844,70 @@ class PosScreen extends ConsumerWidget {
     final state = ref.read(cartProvider).activeBill;
     final discountCtrl = TextEditingController(text: state.globalDiscount > 0 ? state.globalDiscount.toStringAsFixed(2) : '');
     final promoCtrl = TextEditingController(text: state.promoCode ?? '');
+    final discountFocus = FocusNode();
+    final promoFocus = FocusNode();
+
+    void submit() {
+      final discount = double.tryParse(discountCtrl.text) ?? 0.0;
+      final promo = promoCtrl.text.trim();
+      
+      ref.read(cartProvider.notifier).setGlobalDiscount(discount);
+      ref.read(cartProvider.notifier).setPromoCode(promo.isEmpty ? null : promo);
+      
+      Navigator.pop(context);
+    }
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Apply Discount', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: discountCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: 'Global Discount (LKR)',
-                prefixText: 'LKR ',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      builder: (context) => CallbackShortcuts(
+        bindings: {
+          SingleActivator(LogicalKeyboardKey.arrowDown): () {
+            if (discountFocus.hasFocus) promoFocus.requestFocus();
+          },
+          SingleActivator(LogicalKeyboardKey.arrowUp): () {
+            if (promoFocus.hasFocus) discountFocus.requestFocus();
+          },
+        },
+        child: AlertDialog(
+          title: Text('Apply Discount', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: discountCtrl,
+                focusNode: discountFocus,
+                autofocus: true,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                textInputAction: TextInputAction.next,
+                onSubmitted: (_) => promoFocus.requestFocus(),
+                decoration: InputDecoration(
+                  labelText: 'Global Discount (LKR)',
+                  prefixText: 'LKR ',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: promoCtrl,
-              decoration: InputDecoration(
-                labelText: 'Promo Code (Optional)',
-                prefixIcon: const Icon(Icons.confirmation_number_outlined),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: promoCtrl,
+                focusNode: promoFocus,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => submit(),
+                decoration: InputDecoration(
+                  labelText: 'Promo Code (Optional)',
+                  prefixIcon: const Icon(Icons.confirmation_number_outlined),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: submit,
+              child: const Text('Apply'),
             ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              final discount = double.tryParse(discountCtrl.text) ?? 0.0;
-              final promo = promoCtrl.text.trim();
-              
-              ref.read(cartProvider.notifier).setGlobalDiscount(discount);
-              ref.read(cartProvider.notifier).setPromoCode(promo.isEmpty ? null : promo);
-              
-              Navigator.pop(context);
-            },
-            child: const Text('Apply'),
-          ),
-        ],
       ),
     );
   }
