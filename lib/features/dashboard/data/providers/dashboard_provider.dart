@@ -148,28 +148,43 @@ final dashboardStatsProvider = StreamProvider<DashboardStats>((ref) {
     for (var bill in bills) {
       if (bill.status == 'Cancelled' || bill.isReturn) continue;
 
-      totalSales += bill.totalAmount;
-      orders++;
-
-      // Chart
-      String key;
-      if (interval == 'HOUR') {
-         key = DateFormat('HH:00').format(bill.createdAt);
-      } else {
-         key = DateFormat('yyyy-MM-dd').format(bill.createdAt);
+      double uncostedAmount = 0.0;
+      for (var item in bill.items) {
+        if (item.productId == 'TEMP-001' && (item.costPrice == null || item.costPrice == 0.0)) {
+          uncostedAmount += (item.price * item.quantity) - item.discount;
+        }
       }
-      
-      if (chartMap.containsKey(key)) {
-         final current = chartMap[key]!;
-         chartMap[key] = DailySalesData(
-           date: current.date, 
-           totalSales: current.totalSales + bill.totalAmount, 
-           orderCount: current.orderCount + 1
-         );
+
+      double effectiveAmount = bill.totalAmount - uncostedAmount;
+      if (effectiveAmount < 0) effectiveAmount = 0;
+
+      if (effectiveAmount > 0 || bill.items.isEmpty) {
+        totalSales += effectiveAmount;
+        orders++;
+
+        // Chart
+        String key;
+        if (interval == 'HOUR') {
+           key = DateFormat('HH:00').format(bill.createdAt);
+        } else {
+           key = DateFormat('yyyy-MM-dd').format(bill.createdAt);
+        }
+        
+        if (chartMap.containsKey(key)) {
+           final current = chartMap[key]!;
+           chartMap[key] = DailySalesData(
+             date: current.date, 
+             totalSales: current.totalSales + effectiveAmount, 
+             orderCount: current.orderCount + 1
+           );
+        }
       }
 
       // Top Products
       for (var item in bill.items) {
+         if (item.productId == 'TEMP-001' && (item.costPrice == null || item.costPrice == 0.0)) {
+            continue; // Exclude from Top Products until costed
+         }
          final pKey = item.productId;
          final existing = productMap[pKey] ?? TopProduct(name: item.productName, quantity: 0, sales: 0);
          productMap[pKey] = TopProduct(

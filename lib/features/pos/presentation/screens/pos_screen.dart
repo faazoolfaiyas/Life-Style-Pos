@@ -88,6 +88,13 @@ class PosScreen extends ConsumerWidget {
           Text('Register', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold)),
           Row(
             children: [
+              TextButton.icon(
+                icon: const Icon(Icons.flash_on),
+                label: const Text('Quick Sale'),
+                style: TextButton.styleFrom(foregroundColor: Colors.purple),
+                onPressed: () => _showQuickSaleDialog(context, ref),
+              ),
+              const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.filter_list),
                 tooltip: 'Filter Products',
@@ -182,6 +189,56 @@ class PosScreen extends ConsumerWidget {
   }
 
   // --- POS LOGIC METHODS ---
+
+  void _showQuickSaleDialog(BuildContext context, WidgetRef ref) {
+    final nameCtrl = TextEditingController();
+    final priceCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Quick Sale', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Item Name',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: priceCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Selling Price',
+                prefixText: 'LKR ',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () {
+              final name = nameCtrl.text.trim();
+              final price = double.tryParse(priceCtrl.text) ?? 0.0;
+              
+              if (name.isNotEmpty && price >= 0) {
+                ref.read(cartProvider.notifier).addQuickSaleItem(name, price);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Add to Cart'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _handleSaveWithoutPrint(BuildContext context, WidgetRef ref) async {
      final state = ref.read(cartProvider).activeBill;

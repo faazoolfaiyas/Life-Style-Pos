@@ -324,6 +324,52 @@ class CartNotifier extends Notifier<GlobalCartState> {
     _updateActiveBill(currentBill.copyWith(items: updatedItems));
   }
 
+  void addQuickSaleItem(String name, double price) {
+    final currentBill = state.activeBill;
+    
+    final existingIndex = currentBill.items.indexWhere((item) => 
+        item.productId == 'TEMP-001' && item.productName == name && item.price == price);
+
+    List<BillItem> updatedItems;
+
+    if (existingIndex != -1) {
+      final oldItems = List<BillItem>.from(currentBill.items);
+      final item = oldItems[existingIndex];
+      final newQty = item.quantity + 1;
+      final unitDiscount = item.discount / item.quantity;
+      final newDiscount = unitDiscount * newQty;
+      oldItems[existingIndex] = item.copyWith(quantity: newQty, discount: newDiscount);
+      updatedItems = oldItems;
+    } else {
+      final newItem = BillItem(
+        productId: 'TEMP-001',
+        productName: name,
+        categoryName: 'Quick Sale',
+        price: price,
+        quantity: 1,
+      );
+      updatedItems = [...currentBill.items, newItem];
+    }
+
+    updatedItems.sort((a, b) {
+      final catA = (a.categoryName as String?) ?? 'Uncategorized';
+      final catB = (b.categoryName as String?) ?? 'Uncategorized';
+      
+      final catCompare = catA.compareTo(catB);
+      if (catCompare != 0) return catCompare;
+
+      final nameCompare = a.productName.compareTo(b.productName);
+      if (nameCompare != 0) return nameCompare;
+      
+      final colorCompare = (a.selectedColor ?? '').compareTo(b.selectedColor ?? '');
+      if (colorCompare != 0) return colorCompare;
+
+      return (a.selectedSize ?? '').compareTo(b.selectedSize ?? '');
+    });
+
+    _updateActiveBill(currentBill.copyWith(items: updatedItems));
+  }
+
   void removeFromCart(int index) {
     final currentBill = state.activeBill;
     if (index >= 0 && index < currentBill.items.length) {

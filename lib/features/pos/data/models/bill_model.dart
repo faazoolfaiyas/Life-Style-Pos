@@ -8,6 +8,7 @@ class BillItem {
   final double discount;
   final String? selectedColor;
   final String? selectedSize;
+  final double? costPrice; // Added for Non-Inventory Quick Sale
 
   const BillItem({
     required this.productId,
@@ -19,6 +20,7 @@ class BillItem {
     this.discount = 0.0,
     this.selectedColor,
     this.selectedSize,
+    this.costPrice,
   });
 
   double get total => (price * quantity) - discount;
@@ -34,6 +36,7 @@ class BillItem {
       'discount': discount,
       'selectedColor': selectedColor,
       'selectedSize': selectedSize,
+      'costPrice': costPrice,
     };
   }
 
@@ -48,6 +51,7 @@ class BillItem {
       discount: (map['discount'] as num?)?.toDouble() ?? 0.0,
       selectedColor: map['selectedColor'] as String?,
       selectedSize: map['selectedSize'] as String?,
+      costPrice: (map['costPrice'] as num?)?.toDouble(),
     );
   }
 
@@ -56,6 +60,7 @@ class BillItem {
     double? discount,
     String? categoryName,
     String? stockId,
+    double? costPrice,
   }) {
     return BillItem(
       productId: productId,
@@ -67,6 +72,7 @@ class BillItem {
       discount: discount ?? this.discount,
       selectedColor: selectedColor,
       selectedSize: selectedSize,
+      costPrice: costPrice ?? this.costPrice,
     );
   }
 }

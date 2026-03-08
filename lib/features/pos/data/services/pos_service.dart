@@ -133,6 +133,8 @@ class PosService {
   // --- New Helper: Standard Deduction ---
   Future<void> _handleNewBillStockDeduction(Bill bill, List<ProductSize> allSizes, List<ProductColor> allColors, WriteBatch batch) async {
       for (var item in bill.items) {
+          if (item.productId == 'TEMP-001') continue; // Skip Quick Sale items
+
           if (item.quantity > 0) {
              await _resolveAndDeduct(item, item.quantity, allSizes, allColors, batch);
           } else if (item.quantity < 0) {
@@ -169,6 +171,7 @@ class PosService {
       Map<String, BillItem> oldItemMap = {}; // Retention for restoration context
       
       for (var item in oldBill.items) {
+          if (item.productId == 'TEMP-001') continue; // Skip Quick Sale items
           final key = _getStockKey(item);
           oldQtyMap[key] = (oldQtyMap[key] ?? 0) + item.quantity;
           oldItemMap[key] = item;
@@ -178,6 +181,7 @@ class PosService {
       Map<String, BillItem> newItemMap = {};
       
       for (var item in newBill.items) {
+          if (item.productId == 'TEMP-001') continue; // Skip Quick Sale items
           final key = _getStockKey(item);
           newQtyMap[key] = (newQtyMap[key] ?? 0) + item.quantity;
           newItemMap[key] = item;
@@ -413,6 +417,7 @@ class PosService {
     final batch = _firestore.batch();
     
     for (var item in bill.items) {
+       if (item.productId == 'TEMP-001') continue; // Skip Quick Sale items
        await _restoreStock(item, allSizes, allColors, batch, reason: 'Bill Deletion');
     }
     
@@ -663,5 +668,44 @@ class PosService {
       print('Error fetching bill by ID: $e');
       return null;
     }
+  }
+
+  // --- Quick Sale Support ---
+  Future<void> updateQuickSaleCost(String billId, String productId, double costPrice) async {
+    final billDoc = await _firestore.collection('bills').doc(billId).get();
+    if (!billDoc.exists) throw Exception('Bill not found');
+
+    final bill = Bill.fromMap(billDoc.data()!);
+    final updatedItems = bill.items.map((item) {
+      if (item.productId == productId && (item.costPrice == null || item.costPrice == 0.0)) {
+        return item.copyWith(costPrice: costPrice);
+      }
+      return item;
+    }).toList();
+
+    await _firestore.collection('bills').doc(billId).update({
+      'items': updatedItems.map((x) => x.toMap()).toList(),
+    });
+  }
+
+  Stream<List<Bill>> getPendingCostBills() {
+    // We fetch all bills and filter locally since array-contains doesn't work for partial object matching
+    // For efficiency, in a real app, this should be a cloud function or a dedicated 'pending_costs' collection.
+    // For now, streaming recent bills and filtering is acceptable. 
+    return _firestore
+        .collection('bills')
+        .orderBy('createdAt', descending: true)
+        .limit(100) // Limit to recent 100 bills for performance
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.where((doc) {
+            final data = doc.data();
+            final items = data['items'] as List<dynamic>?;
+            if (items == null) return false;
+            return items.any((item) {
+               return item['productId'] == 'TEMP-001' && (item['costPrice'] == null || item['costPrice'] == 0.0);
+            });
+          }).map((doc) => Bill.fromMap(doc.data())).toList();
+    });
   }
 }
