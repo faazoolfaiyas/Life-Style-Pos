@@ -1,0 +1,1013 @@
+{
+  "schemaVersion": 1,
+  "templates": [
+    {
+      "id": "grocery_product_v1",
+      "type": "product",
+      "businessType": "grocery",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "name"
+        },
+        {
+          "id": "name",
+          "kind": "question",
+          "fieldKey": "name",
+          "label": {
+            "en": "Product name",
+            "si": "නිෂ්පාදන නාමය",
+            "ta": "பொருளின் பெயர்"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "text"
+          },
+          "next": "category"
+        },
+        {
+          "id": "category",
+          "kind": "question",
+          "fieldKey": "category",
+          "label": {
+            "en": "Category",
+            "si": "කාණ්ඩය",
+            "ta": "வகை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "choice"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "grocery_stock_v1",
+      "type": "stock",
+      "businessType": "grocery",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "quantity"
+        },
+        {
+          "id": "quantity",
+          "kind": "question",
+          "fieldKey": "quantity",
+          "label": {
+            "en": "How many?",
+            "si": "කොපමණද?",
+            "ta": "எத்தனை?"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "number",
+            "variants": false
+          },
+          "next": "sellingPrice"
+        },
+        {
+          "id": "sellingPrice",
+          "kind": "question",
+          "fieldKey": "sellingPrice",
+          "label": {
+            "en": "Selling price",
+            "si": "විකුණුම් මිල",
+            "ta": "விற்பனை விலை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "price",
+            "currency": "LKR"
+          },
+          "next": "expiry"
+        },
+        {
+          "id": "expiry",
+          "kind": "question",
+          "fieldKey": "expiry",
+          "label": {
+            "en": "Expiry date",
+            "si": "කල් ඉකුත් වීම",
+            "ta": "காலாவதி தேதி"
+          },
+          "required": false,
+          "locked": false,
+          "config": {
+            "input": "date"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "grocery_id_v1",
+      "type": "product_id",
+      "businessType": "grocery",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "pharmacy_product_v1",
+      "type": "product",
+      "businessType": "pharmacy",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "name"
+        },
+        {
+          "id": "name",
+          "kind": "question",
+          "fieldKey": "name",
+          "label": {
+            "en": "Product name",
+            "si": "නිෂ්පාදන නාමය",
+            "ta": "பொருளின் பெயர்"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "text"
+          },
+          "next": "category"
+        },
+        {
+          "id": "category",
+          "kind": "question",
+          "fieldKey": "category",
+          "label": {
+            "en": "Category",
+            "si": "කාණ්ඩය",
+            "ta": "வகை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "choice"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "pharmacy_stock_v1",
+      "type": "stock",
+      "businessType": "pharmacy",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "quantity"
+        },
+        {
+          "id": "quantity",
+          "kind": "question",
+          "fieldKey": "quantity",
+          "label": {
+            "en": "How many?",
+            "si": "කොපමණද?",
+            "ta": "எத்தனை?"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "number",
+            "variants": false
+          },
+          "next": "sellingPrice"
+        },
+        {
+          "id": "sellingPrice",
+          "kind": "question",
+          "fieldKey": "sellingPrice",
+          "label": {
+            "en": "Selling price",
+            "si": "විකුණුම් මිල",
+            "ta": "விற்பனை விலை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "price",
+            "currency": "LKR"
+          },
+          "next": "expiry"
+        },
+        {
+          "id": "expiry",
+          "kind": "question",
+          "fieldKey": "expiry",
+          "label": {
+            "en": "Expiry date",
+            "si": "කල් ඉකුත් වීම",
+            "ta": "காலாவதி தேதி"
+          },
+          "required": false,
+          "locked": false,
+          "config": {
+            "input": "date"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "pharmacy_id_v1",
+      "type": "product_id",
+      "businessType": "pharmacy",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "clothing_product_v1",
+      "type": "product",
+      "businessType": "clothing",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "name"
+        },
+        {
+          "id": "name",
+          "kind": "question",
+          "fieldKey": "name",
+          "label": {
+            "en": "Product name",
+            "si": "නිෂ්පාදන නාමය",
+            "ta": "பொருளின் பெயர்"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "text"
+          },
+          "next": "category"
+        },
+        {
+          "id": "category",
+          "kind": "question",
+          "fieldKey": "category",
+          "label": {
+            "en": "Category",
+            "si": "කාණ්ඩය",
+            "ta": "வகை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "choice"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "clothing_stock_v1",
+      "type": "stock",
+      "businessType": "clothing",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "quantity"
+        },
+        {
+          "id": "quantity",
+          "kind": "question",
+          "fieldKey": "quantity",
+          "label": {
+            "en": "How many?",
+            "si": "කොපමණද?",
+            "ta": "எத்தனை?"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "sizeColorGrid",
+            "variants": true
+          },
+          "next": "sellingPrice"
+        },
+        {
+          "id": "sellingPrice",
+          "kind": "question",
+          "fieldKey": "sellingPrice",
+          "label": {
+            "en": "Selling price",
+            "si": "විකුණුම් මිල",
+            "ta": "விற்பனை விலை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "price",
+            "currency": "LKR"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "clothing_id_v1",
+      "type": "product_id",
+      "businessType": "clothing",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "electronics_product_v1",
+      "type": "product",
+      "businessType": "electronics",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "name"
+        },
+        {
+          "id": "name",
+          "kind": "question",
+          "fieldKey": "name",
+          "label": {
+            "en": "Product name",
+            "si": "නිෂ්පාදන නාමය",
+            "ta": "பொருளின் பெயர்"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "text"
+          },
+          "next": "category"
+        },
+        {
+          "id": "category",
+          "kind": "question",
+          "fieldKey": "category",
+          "label": {
+            "en": "Category",
+            "si": "කාණ්ඩය",
+            "ta": "வகை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "choice"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "electronics_stock_v1",
+      "type": "stock",
+      "businessType": "electronics",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "quantity"
+        },
+        {
+          "id": "quantity",
+          "kind": "question",
+          "fieldKey": "quantity",
+          "label": {
+            "en": "How many?",
+            "si": "කොපමණද?",
+            "ta": "எத்தனை?"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "number",
+            "variants": false
+          },
+          "next": "sellingPrice"
+        },
+        {
+          "id": "sellingPrice",
+          "kind": "question",
+          "fieldKey": "sellingPrice",
+          "label": {
+            "en": "Selling price",
+            "si": "විකුණුම් මිල",
+            "ta": "விற்பனை விலை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "price",
+            "currency": "LKR"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "electronics_id_v1",
+      "type": "product_id",
+      "businessType": "electronics",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "hardware_product_v1",
+      "type": "product",
+      "businessType": "hardware",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "name"
+        },
+        {
+          "id": "name",
+          "kind": "question",
+          "fieldKey": "name",
+          "label": {
+            "en": "Product name",
+            "si": "නිෂ්පාදන නාමය",
+            "ta": "பொருளின் பெயர்"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "text"
+          },
+          "next": "category"
+        },
+        {
+          "id": "category",
+          "kind": "question",
+          "fieldKey": "category",
+          "label": {
+            "en": "Category",
+            "si": "කාණ්ඩය",
+            "ta": "வகை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "choice"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "hardware_stock_v1",
+      "type": "stock",
+      "businessType": "hardware",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "quantity"
+        },
+        {
+          "id": "quantity",
+          "kind": "question",
+          "fieldKey": "quantity",
+          "label": {
+            "en": "How many?",
+            "si": "කොපමණද?",
+            "ta": "எத்தனை?"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "number",
+            "variants": false
+          },
+          "next": "sellingPrice"
+        },
+        {
+          "id": "sellingPrice",
+          "kind": "question",
+          "fieldKey": "sellingPrice",
+          "label": {
+            "en": "Selling price",
+            "si": "විකුණුම් මිල",
+            "ta": "விற்பனை விலை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "price",
+            "currency": "LKR"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "hardware_id_v1",
+      "type": "product_id",
+      "businessType": "hardware",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "bakery_product_v1",
+      "type": "product",
+      "businessType": "bakery",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "name"
+        },
+        {
+          "id": "name",
+          "kind": "question",
+          "fieldKey": "name",
+          "label": {
+            "en": "Product name",
+            "si": "නිෂ්පාදන නාමය",
+            "ta": "பொருளின் பெயர்"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "text"
+          },
+          "next": "category"
+        },
+        {
+          "id": "category",
+          "kind": "question",
+          "fieldKey": "category",
+          "label": {
+            "en": "Category",
+            "si": "කාණ්ඩය",
+            "ta": "வகை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "choice"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "bakery_stock_v1",
+      "type": "stock",
+      "businessType": "bakery",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "quantity"
+        },
+        {
+          "id": "quantity",
+          "kind": "question",
+          "fieldKey": "quantity",
+          "label": {
+            "en": "How many?",
+            "si": "කොපමණද?",
+            "ta": "எத்தனை?"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "number",
+            "variants": false
+          },
+          "next": "sellingPrice"
+        },
+        {
+          "id": "sellingPrice",
+          "kind": "question",
+          "fieldKey": "sellingPrice",
+          "label": {
+            "en": "Selling price",
+            "si": "විකුණුම් මිල",
+            "ta": "விற்பனை விலை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "price",
+            "currency": "LKR"
+          },
+          "next": "expiry"
+        },
+        {
+          "id": "expiry",
+          "kind": "question",
+          "fieldKey": "expiry",
+          "label": {
+            "en": "Expiry date",
+            "si": "කල් ඉකුත් වීම",
+            "ta": "காலாவதி தேதி"
+          },
+          "required": false,
+          "locked": false,
+          "config": {
+            "input": "date"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "bakery_id_v1",
+      "type": "product_id",
+      "businessType": "bakery",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "wholesale_product_v1",
+      "type": "product",
+      "businessType": "wholesale",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "name"
+        },
+        {
+          "id": "name",
+          "kind": "question",
+          "fieldKey": "name",
+          "label": {
+            "en": "Product name",
+            "si": "නිෂ්පාදන නාමය",
+            "ta": "பொருளின் பெயர்"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "text"
+          },
+          "next": "category"
+        },
+        {
+          "id": "category",
+          "kind": "question",
+          "fieldKey": "category",
+          "label": {
+            "en": "Category",
+            "si": "කාණ්ඩය",
+            "ta": "வகை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "choice"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "wholesale_stock_v1",
+      "type": "stock",
+      "businessType": "wholesale",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "quantity"
+        },
+        {
+          "id": "quantity",
+          "kind": "question",
+          "fieldKey": "quantity",
+          "label": {
+            "en": "How many?",
+            "si": "කොපමණද?",
+            "ta": "எத்தனை?"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "number",
+            "variants": false
+          },
+          "next": "sellingPrice"
+        },
+        {
+          "id": "sellingPrice",
+          "kind": "question",
+          "fieldKey": "sellingPrice",
+          "label": {
+            "en": "Selling price",
+            "si": "විකුණුම් මිල",
+            "ta": "விற்பனை விலை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "price",
+            "currency": "LKR"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "wholesale_id_v1",
+      "type": "product_id",
+      "businessType": "wholesale",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "other_product_v1",
+      "type": "product",
+      "businessType": "other",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "name"
+        },
+        {
+          "id": "name",
+          "kind": "question",
+          "fieldKey": "name",
+          "label": {
+            "en": "Product name",
+            "si": "නිෂ්පාදන නාමය",
+            "ta": "பொருளின் பெயர்"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "text"
+          },
+          "next": "category"
+        },
+        {
+          "id": "category",
+          "kind": "question",
+          "fieldKey": "category",
+          "label": {
+            "en": "Category",
+            "si": "කාණ්ඩය",
+            "ta": "வகை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "choice"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "other_stock_v1",
+      "type": "stock",
+      "businessType": "other",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "quantity"
+        },
+        {
+          "id": "quantity",
+          "kind": "question",
+          "fieldKey": "quantity",
+          "label": {
+            "en": "How many?",
+            "si": "කොපමණද?",
+            "ta": "எத்தனை?"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "number",
+            "variants": false
+          },
+          "next": "sellingPrice"
+        },
+        {
+          "id": "sellingPrice",
+          "kind": "question",
+          "fieldKey": "sellingPrice",
+          "label": {
+            "en": "Selling price",
+            "si": "විකුණුම් මිල",
+            "ta": "விற்பனை விலை"
+          },
+          "required": true,
+          "locked": true,
+          "config": {
+            "input": "price",
+            "currency": "LKR"
+          },
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    },
+    {
+      "id": "other_id_v1",
+      "type": "product_id",
+      "businessType": "other",
+      "version": 1,
+      "status": "published",
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "start",
+          "next": "end"
+        },
+        {
+          "id": "end",
+          "kind": "end"
+        }
+      ]
+    }
+  ]
+}
